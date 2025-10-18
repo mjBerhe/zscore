@@ -1,4 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { db } from '..'
+import { players } from '@/db/schema'
 
 export const Route = createFileRoute('/')({
   component: App,
