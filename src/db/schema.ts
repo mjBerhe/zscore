@@ -9,9 +9,9 @@ export const players = pgTable('players', {
 
 export const projections = pgTable('projections', {
   id: serial('id').primaryKey(),
-  playerId: integer('player_id').references(() => players.id),
-  source: text('source').notNull(),
+  playerName: text('player_name').notNull(),
   season: integer('season').notNull(),
+  source: text('source').notNull(),
 
   gp: real('gp'),
   fgPct: real('fg_pct'),
