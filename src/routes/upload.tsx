@@ -24,6 +24,7 @@ function Upload() {
 
   const handleUpload = async () => {
     try {
+      console.log('uploading...')
       const result = await upload({ data: { csv: input } })
       console.log('Upload result:', result)
     } catch (err) {

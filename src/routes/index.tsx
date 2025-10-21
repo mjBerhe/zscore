@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { getProjectionsBySource, getProjectionSets } from '@/server/projections'
+import {
+  getProjectionsBySource,
+  getProjectionsBySourceWithZScores,
+  getProjectionSets,
+} from '@/server/projections'
 import { createFileRoute } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
 
@@ -19,7 +23,7 @@ export const Route = createFileRoute('/')({
 
 function App() {
   const getAllProjectionSets = useServerFn(getProjectionSets)
-  const getProjectionSource = useServerFn(getProjectionsBySource)
+  const getProjectionSource = useServerFn(getProjectionsBySourceWithZScores)
 
   const [selectedProjectionSet, setSelectedProjectionSet] = useState<
     string | null
@@ -50,6 +54,9 @@ function App() {
   if (isLoading) return <p className="p-4 text-gray-400">Loading sets...</p>
   if (error) return <p className="p-4 text-red-400">Error loading sets.</p>
 
+  if (projectionsError)
+    return <p className="p-4 text-red-400">Error loading selected set.</p>
+
   return (
     <div className="min-h-screen bg-black text-white">
       <div className="max-w-7xl mx-auto mt-4 p-2">
@@ -59,7 +66,7 @@ function App() {
         >
           <ListboxButton
             className={clsx(
-              'relative block w-full rounded-lg bg-zinc-800 py-1.5 pr-8 pl-3 text-left text-sm/6 text-white',
+              'relative block w-full rounded-lg bg-zinc-800 py-1.5 pr-8 pl-3 text-left text-sm/6 text-white hover:bg-zinc-700',
               'focus:not-data-focus:outline-none data-focus:outline-2 data-focus:-outline-offset-2 data-focus:outline-white/25',
             )}
           >
@@ -70,7 +77,7 @@ function App() {
             anchor="bottom"
             transition
             className={clsx(
-              'w-(--button-width) rounded-xl border border-white/5 bg-white/5 p-1 [--anchor-gap:--spacing(1)] focus:outline-none',
+              'w-(--button-width) rounded-xl border border-zinc-600 bg-zinc-800 p-1 [--anchor-gap:--spacing(1)] focus:outline-none',
               'transition duration-100 ease-in data-leave:data-closed:opacity-0',
             )}
           >
@@ -78,7 +85,7 @@ function App() {
               <ListboxOption
                 key={set}
                 value={set}
-                className="group flex cursor-default items-center gap-2 rounded-lg px-3 py-1.5 select-none data-focus:bg-white/10"
+                className="group flex cursor-default items-center gap-2 rounded-lg px-3 py-1.5 select-none data-focus:bg-zinc-700"
               >
                 <div className="text-sm text-white">{set}</div>
               </ListboxOption>
@@ -99,7 +106,10 @@ function App() {
                       PTS
                     </th>
                     <th className="border border-gray-700 px-2 py-1 text-sm">
-                      TPM
+                      zPTS
+                    </th>
+                    <th className="border border-gray-700 px-2 py-1 text-sm">
+                      3PM
                     </th>
                     <th className="border border-gray-700 px-2 py-1 text-sm">
                       REB
@@ -132,6 +142,9 @@ function App() {
                       </td>
                       <td className="border border-gray-700 px-2 py-1 text-sm">
                         {row.pts}
+                      </td>
+                      <td className="border border-gray-700 px-2 py-1 text-sm">
+                        {row.zpts}
                       </td>
                       <td className="border border-gray-700 px-2 py-1 text-sm">
                         {row.tpm}

@@ -1,4 +1,5 @@
 import { pgTable, serial, text, integer, real } from 'drizzle-orm/pg-core'
+import { InferSelectModel } from 'drizzle-orm'
 
 export const players = pgTable('players', {
   id: serial('id').primaryKey(),
@@ -26,3 +27,5 @@ export const projections = pgTable('projections', {
   ftp: real('ftp'),
   fta: real('fta'),
 })
+
+export type ProjectionPlayer = InferSelectModel<typeof projections>

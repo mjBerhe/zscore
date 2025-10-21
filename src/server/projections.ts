@@ -2,10 +2,22 @@ import { createServerFn } from '@tanstack/react-start'
 import { db } from '..'
 import { projections } from '@/db/schema'
 import { eq } from 'drizzle-orm'
+import type { ProjectionPlayer } from '@/db/schema'
+
+type CountingStat = 'pts' | 'reb' | 'ast' | 'stl' | 'blk' | 'tpm' | 'to'
+type ZStatFields = {
+  [K in CountingStat as `z${K}`]: number
+}
+type ProjectionPlayerWithZ = ProjectionPlayer & ZStatFields
 
 export const uploadProjections = createServerFn({ method: 'POST' })
   .inputValidator((data: { csv: string }) => data)
   .handler(async ({ data }) => {
+    // WARNING: only if I want to delete all projection set before uploading new set
+    // await db
+    //   .delete(projections)
+    //   .where(eq(projections.source, "Matt's 2025-2026 Projections"))
+
     const allRows = data.csv.trim().split('\n')
 
     const headers = allRows[0].split(',').map((h) => h.trim())
@@ -62,6 +74,82 @@ export const getProjectionsBySource = createServerFn({ method: 'GET' })
     return rows
   })
 
+export const getProjectionsBySourceWithZScores = createServerFn({
+  method: 'GET',
+})
+  .inputValidator((data: { source: string }) => data)
+  .handler(async ({ data }) => {
+    const players = await db
+      .select()
+      .from(projections)
+      .where(eq(projections.source, data.source))
+
+    // lets have some consts
+    // FIRST lets use all 480 players
+
+    const playersWithCountingZScores = calcAllCountingZScores(players)
+    console.log(playersWithCountingZScores)
+
+    const rankedPlayers = playersWithCountingZScores
+      .sort((a, b) => b.zpts - a.zpts)
+      .map((p, i) => ({ ...p, rank: i + 1 }))
+
+    // console.log(avgPts, stdPts)
+
+    return rankedPlayers
+  })
+
+const calcPlayersCountingZScores = <K extends CountingStat>(
+  players: ProjectionPlayer[],
+  countingStat: K,
+) => {
+  const statValues = players.map((player) => player[countingStat] || 0)
+  const avg =
+    statValues.reduce((sum, curr) => sum + curr, 0) / statValues.length
+  const variance =
+    statValues.reduce((sum, v) => sum + (v - avg) ** 2, 0) / statValues.length
+
+  const std = Math.sqrt(variance) || 1 // prevent divide by zero
+
+  const playersWithZScores = players.map((player) => {
+    const zStat = ((Number(player[countingStat]) || 0) - avg) / std
+    return {
+      ...player,
+      [`z${countingStat}`]: zStat,
+    }
+  })
+
+  return playersWithZScores
+}
+
+const calcAllCountingZScores = (
+  players: ProjectionPlayer[],
+): ProjectionPlayerWithZ[] => {
+  const countingStats: CountingStat[] = [
+    'pts',
+    'reb',
+    'ast',
+    'stl',
+    'blk',
+    'tpm',
+    'to',
+  ]
+
+  // Start with the base players array
+  let updatedPlayers = [...players]
+
+  for (const stat of countingStats) {
+    const withZ = calcPlayersCountingZScores(updatedPlayers, stat)
+    // merge each computed z-score into player objects
+    updatedPlayers = updatedPlayers.map((player, i) => ({
+      ...player,
+      ...withZ[i],
+    }))
+  }
+
+  return updatedPlayers as ProjectionPlayerWithZ[]
+}
+
 export const getAllProjections = createServerFn({ method: 'GET' }).handler(
   async () => {
     const rows = await db.select().from(projections)
@@ -75,3 +163,10 @@ export const getAllProjections = createServerFn({ method: 'GET' }).handler(
 //     return result
 //   },
 // )
+
+const capitalizeFirstLetter = (str: string) => {
+  if (typeof str !== 'string' || str.length === 0) {
+    return str // Handle empty strings or non-string inputs
+  }
+  return str.charAt(0).toUpperCase() + str.slice(1)
+}
