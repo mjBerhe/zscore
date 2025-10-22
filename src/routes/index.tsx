@@ -16,6 +16,31 @@ import {
 } from '@headlessui/react'
 import { ChevronDown } from 'lucide-react'
 import clsx from 'clsx'
+import { Toggle } from '@/components/Switch'
+
+const REGULAR_STATS = [
+  'pts',
+  'tpm',
+  'reb',
+  'ast',
+  'stl',
+  'blk',
+  'to',
+  'fgp',
+  'ftp',
+]
+
+const ZSCORE_STATS = [
+  'zpts',
+  'ztpm',
+  'zreb',
+  'zast',
+  'zstl',
+  'zblk',
+  'zto',
+  'zfgp',
+  'zftp',
+]
 
 export const Route = createFileRoute('/')({
   component: App,
@@ -28,6 +53,8 @@ function App() {
   const [selectedProjectionSet, setSelectedProjectionSet] = useState<
     string | null
   >(null)
+
+  const [zScoresToggle, setZScoresToggle] = useState<boolean>(false)
 
   const {
     data: projectionSets,
@@ -59,7 +86,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="max-w-7xl mx-auto mt-4 p-2">
+      <div className="max-w-7xl mx-auto mt-4 p-2 flex flex-col gap-y-4">
         <Listbox
           value={selectedProjectionSet}
           onChange={(val) => setSelectedProjectionSet(val)}
@@ -93,45 +120,32 @@ function App() {
           </ListboxOptions>
         </Listbox>
 
-        <div className="space-y-1 mt-2">
+        <div className="">
+          <Toggle
+            enabled={zScoresToggle}
+            onChange={() => setZScoresToggle((prev) => !prev)}
+          />
+        </div>
+
+        <div className="space-y-1 mt-0">
           {selectedProjections && selectedProjections.length > 0 && (
-            <div className="mt-4 overflow-x-auto">
-              <table className="min-w-full table-auto border-collapse border border-gray-700">
+            <div className="mt-0 overflow-x-auto">
+              <table className="table-fixed min-w-full border-collapse border border-gray-700">
                 <thead>
                   <tr className="bg-zinc-900">
-                    <th className="border border-gray-700 px-2 py-1 text-left text-sm">
+                    <th className="border border-gray-700 py-1 text-left text-sm w-40">
                       Player
                     </th>
-                    <th className="border border-gray-700 px-2 py-1 text-sm">
-                      PTS
-                    </th>
-                    <th className="border border-gray-700 px-2 py-1 text-sm">
-                      zPTS
-                    </th>
-                    <th className="border border-gray-700 px-2 py-1 text-sm">
-                      3PM
-                    </th>
-                    <th className="border border-gray-700 px-2 py-1 text-sm">
-                      REB
-                    </th>
-                    <th className="border border-gray-700 px-2 py-1 text-sm">
-                      AST
-                    </th>
-                    <th className="border border-gray-700 px-2 py-1 text-sm">
-                      STL
-                    </th>
-                    <th className="border border-gray-700 px-2 py-1 text-sm">
-                      BLK
-                    </th>
-                    <th className="border border-gray-700 px-2 py-1 text-sm">
-                      TOV
-                    </th>
-                    <th className="border border-gray-700 px-2 py-1 text-sm">
-                      FG%
-                    </th>
-                    <th className="border border-gray-700 px-2 py-1 text-sm">
-                      FT%
-                    </th>
+                    {(zScoresToggle ? ZSCORE_STATS : REGULAR_STATS).map(
+                      (stat) => (
+                        <th
+                          key={stat}
+                          className="border border-gray-700 py-1 text-sm w-16"
+                        >
+                          {stat}
+                        </th>
+                      ),
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -140,36 +154,16 @@ function App() {
                       <td className="border border-gray-700 px-2 py-1 text-sm">
                         {row.playerName}
                       </td>
-                      <td className="border border-gray-700 px-2 py-1 text-sm">
-                        {row.pts}
-                      </td>
-                      <td className="border border-gray-700 px-2 py-1 text-sm">
-                        {row.zpts}
-                      </td>
-                      <td className="border border-gray-700 px-2 py-1 text-sm">
-                        {row.tpm}
-                      </td>
-                      <td className="border border-gray-700 px-2 py-1 text-sm">
-                        {row.reb}
-                      </td>
-                      <td className="border border-gray-700 px-2 py-1 text-sm">
-                        {row.ast}
-                      </td>
-                      <td className="border border-gray-700 px-2 py-1 text-sm">
-                        {row.stl}
-                      </td>
-                      <td className="border border-gray-700 px-2 py-1 text-sm">
-                        {row.blk}
-                      </td>
-                      <td className="border border-gray-700 px-2 py-1 text-sm">
-                        {row.to}
-                      </td>
-                      <td className="border border-gray-700 px-2 py-1 text-sm">
-                        {row.fgp}
-                      </td>
-                      <td className="border border-gray-700 px-2 py-1 text-sm">
-                        {row.ftp}
-                      </td>
+                      {(zScoresToggle ? ZSCORE_STATS : REGULAR_STATS).map(
+                        (stat) => (
+                          <td
+                            key={stat}
+                            className="border border-gray-700 px-2 py-1 text-sm"
+                          >
+                            {Number(row[stat as keyof typeof row]).toFixed(2)}
+                          </td>
+                        ),
+                      )}
                     </tr>
                   ))}
                 </tbody>
