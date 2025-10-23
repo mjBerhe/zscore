@@ -1,17 +1,12 @@
 import { createServerFn } from '@tanstack/react-start'
 import { db } from '..'
 import { projections } from '@/db/schema'
-import { eq, sql } from 'drizzle-orm'
-import type { ProjectionPlayer } from '@/db/schema'
-
-type CountingStat = 'pts' | 'reb' | 'ast' | 'stl' | 'blk' | 'tpm' | 'tov'
-type PercentageStat = 'fgp' | 'ftp'
-
-type AllZStats = CountingStat | PercentageStat
-type ZStatFields = {
-  [K in AllZStats as `z${K}`]?: number
-}
-type ProjectionPlayerWithZ = ProjectionPlayer & ZStatFields
+import { eq } from 'drizzle-orm'
+import {
+  calcAllCountingZScores,
+  calcPlayersPercentageZScores,
+  calcTotalZScore,
+} from './utils/projections'
 
 export const uploadProjections = createServerFn({ method: 'POST' })
   .inputValidator((data: { csv: string }) => data)
@@ -59,11 +54,6 @@ export const uploadProjections = createServerFn({ method: 'POST' })
 
 export const getProjectionSets = createServerFn({ method: 'GET' }).handler(
   async () => {
-    // const rows = await db
-    //   .selectDistinctOn([projections.source])
-    //   .from(projections)
-
-    // return rows.map((r) => r.source)
     const all = await db
       .select({ source: projections.source })
       .from(projections)
@@ -117,7 +107,7 @@ export const getProjectionsBySourceWithZScores = createServerFn({
         rank: i + 1, // add rank based on sorted order
       }))
 
-    // now that we have our list, we can look for top x players
+    // now that we have our list, we can look for top N players
     const PLAYER_AMOUNT = data?.topPlayerAmount ?? 150
 
     const topPlayers = rankedPlayers.slice(0, PLAYER_AMOUNT)
@@ -132,7 +122,6 @@ export const getProjectionsBySourceWithZScores = createServerFn({
       'ftp',
     )
 
-    // 4️⃣ Add new total + rank again
     const recalculatedFinalZScores = recalculatedPlayersWithZScores.map(
       (p) => ({
         ...p,
@@ -143,124 +132,29 @@ export const getProjectionsBySourceWithZScores = createServerFn({
       .sort((a, b) => (b.totalZ ?? 0) - (a.totalZ ?? 0))
       .map((p, i) => ({ ...p, rank: i + 1 }))
 
-    return recalculatedRankedPlayers
-  })
+    // if we have 150 players, find out how much we need to increase their totalZ to get to 0
+    const baselineZ =
+      recalculatedRankedPlayers[recalculatedRankedPlayers.length - 1]?.totalZ ||
+      0
 
-// given a list of player objects, add in a specific percentage zstat (fgp or ftp)
-const calcPlayersPercentageZScores = (
-  players: ProjectionPlayer[],
-  percentageStat: 'fgp' | 'ftp',
-): ProjectionPlayerWithZ[] => {
-  const statValues = players.map((player) => player[percentageStat] || 0)
-  const avg =
-    statValues.reduce((sum, curr) => sum + curr, 0) / statValues.length
-
-  const playersWithImpactStat = players.map((player) => {
-    const playerStatAttempts =
-      percentageStat === 'fgp' ? player.fga || 0 : player.fta || 0
-    const impactValue =
-      ((player[percentageStat] || 0) - avg) * playerStatAttempts
-
-    return {
-      ...player,
-      [percentageStat === 'fgp' ? 'fgi' : 'fti']: impactValue,
-    }
-  })
-
-  // now calc the zscore for that new impact stat
-  const impactKey = percentageStat === 'fgp' ? 'fgi' : 'fti'
-  const impactValues = playersWithImpactStat.map((p) => p[impactKey] || 0)
-  const impactAvg =
-    impactValues.reduce((sum, curr) => sum + curr, 0) / impactValues.length
-
-  const variance =
-    impactValues.reduce((sum, v) => sum + (v - impactAvg) ** 2, 0) /
-    impactValues.length
-  const std = Math.sqrt(variance) || 1
-
-  const playersWithZScores = playersWithImpactStat.map((player) => {
-    const zStat = ((player[impactKey] || 0) - impactAvg) / std
-    return {
-      ...player,
-      [percentageStat === 'fgp' ? 'zfgp' : 'zftp']: zStat,
-    }
-  })
-
-  return playersWithZScores
-}
-
-// given a list of players objects with stats, add a specific zstat
-const calcPlayersCountingZScores = <K extends CountingStat>(
-  players: ProjectionPlayer[],
-  countingStat: K,
-) => {
-  const statValues = players.map((player) => player[countingStat] || 0)
-  const avg =
-    statValues.reduce((sum, curr) => sum + curr, 0) / statValues.length
-  const variance =
-    statValues.reduce((sum, v) => sum + (v - avg) ** 2, 0) / statValues.length
-
-  const std = Math.sqrt(variance) || 1 // prevent divide by zero
-
-  const playersWithZScores = players.map((player) => {
-    const zStat = ((Number(player[countingStat]) || 0) - avg) / std
-    return {
-      ...player,
-      [`z${countingStat}`]: zStat,
-    }
-  })
-
-  return playersWithZScores
-}
-
-// update all counting zstats
-const calcAllCountingZScores = (
-  players: ProjectionPlayer[],
-): ProjectionPlayerWithZ[] => {
-  const countingStats: CountingStat[] = [
-    'pts',
-    'reb',
-    'ast',
-    'stl',
-    'blk',
-    'tpm',
-    'tov',
-  ]
-
-  // Start with the base players array
-  let updatedPlayers = [...players]
-
-  for (const stat of countingStats) {
-    const withZ = calcPlayersCountingZScores(updatedPlayers, stat)
-    // merge each computed z-score into player objects
-    updatedPlayers = updatedPlayers.map((player, i) => ({
-      ...player,
-      ...withZ[i],
+    const standardizedPlayers = recalculatedRankedPlayers.map((p) => ({
+      ...p,
+      totalZ: p.totalZ - baselineZ,
     }))
-  }
 
-  return updatedPlayers as ProjectionPlayerWithZ[]
-}
+    const TOTAL_BUDGET = (PLAYER_AMOUNT / 15) * 200
+    const totalAdjustedZ = standardizedPlayers.reduce(
+      (sum, p) => sum + p.totalZ,
+      0,
+    )
 
-const calcTotalZScore = (player: ProjectionPlayerWithZ) => {
-  const zKeys: (keyof ProjectionPlayerWithZ)[] = [
-    'zpts',
-    'zreb',
-    'zast',
-    'zstl',
-    'zblk',
-    'ztpm',
-    'ztov',
-    'zfgp',
-    'zftp',
-  ]
+    const playersWithPrice = standardizedPlayers.map((p) => ({
+      ...p,
+      price: p.totalZ > 0 ? (p.totalZ / totalAdjustedZ) * TOTAL_BUDGET : 0,
+    }))
 
-  return zKeys.reduce((sum, key) => {
-    const val = player[key as AllZStats] ?? 0
-    // Reverse turnovers
-    return key === 'ztov' ? sum - val : sum + val
-  }, 0)
-}
+    return playersWithPrice
+  })
 
 export const getAllProjections = createServerFn({ method: 'GET' }).handler(
   async () => {
@@ -268,10 +162,3 @@ export const getAllProjections = createServerFn({ method: 'GET' }).handler(
     return rows
   },
 )
-
-// export const getAllPlayers = createServerFn({ method: 'GET' }).handler(
-//   async () => {
-//     const result = await db.select().from(players)
-//     return result
-//   },
-// )

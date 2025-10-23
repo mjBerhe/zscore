@@ -50,6 +50,7 @@ const TOP_N_OPTIONS = [
   { label: 'Top 100', value: 100 },
   { label: 'Top 135', value: 135 },
   { label: 'Top 150', value: 150 },
+  { label: 'Top 175', value: 175 },
   { label: 'Top 200', value: 200 },
   { label: 'All Players', value: 999 },
 ]
@@ -192,6 +193,9 @@ function App() {
                     <th className="border border-gray-700 py-1 text-sm w-16">
                       Score
                     </th>
+                    <th className="border border-gray-700 py-1 text-sm w-16">
+                      Price
+                    </th>
                     {(zScoresToggle ? ZSCORE_STATS : REGULAR_STATS).map(
                       (stat) => (
                         <th
@@ -215,6 +219,9 @@ function App() {
                       </td>
                       <td className="border border-gray-700 px-2 py-1 text-sm">
                         {row.totalZ.toFixed(2)}
+                      </td>
+                      <td className="border border-gray-700 px-2 py-1 text-sm">
+                        {row.price.toFixed(2)}
                       </td>
                       {(zScoresToggle ? ZSCORE_STATS : REGULAR_STATS).map(
                         (stat) => (
