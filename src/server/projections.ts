@@ -80,7 +80,7 @@ export const getProjectionsBySource = createServerFn({ method: 'GET' })
 export const getProjectionsBySourceWithZScores = createServerFn({
   method: 'GET',
 })
-  .inputValidator((data: { source: string }) => data)
+  .inputValidator((data: { source: string; topPlayerAmount?: number }) => data)
   .handler(async ({ data }) => {
     const players = await db
       .select()
@@ -100,11 +100,45 @@ export const getProjectionsBySourceWithZScores = createServerFn({
       'ftp',
     )
 
-    const rankedPlayers = playersWithCountingZScores
-      .sort((a, b) => b?.zpts || 0 - (a?.zpts || 0))
+    const withTotalZScores = playersWithCountingZScores.map((p) => ({
+      ...p,
+      totalZ: calcTotalZScore(p),
+    }))
+
+    const rankedPlayers = withTotalZScores
+      .sort((a, b) => (b.totalZ ?? 0) - (a.totalZ ?? 0))
+      .map((p, i) => ({
+        ...p,
+        rank: i + 1, // add rank based on sorted order
+      }))
+
+    // now that we have our list, we can look for top x players
+    const PLAYER_AMOUNT = data?.topPlayerAmount ?? 150
+
+    const topPlayers = rankedPlayers.slice(0, PLAYER_AMOUNT)
+
+    let recalculatedPlayersWithZScores = calcAllCountingZScores(topPlayers)
+    recalculatedPlayersWithZScores = calcPlayersPercentageZScores(
+      recalculatedPlayersWithZScores,
+      'fgp',
+    )
+    recalculatedPlayersWithZScores = calcPlayersPercentageZScores(
+      recalculatedPlayersWithZScores,
+      'ftp',
+    )
+
+    // 4️⃣ Add new total + rank again
+    const recalculatedFinalZScores = recalculatedPlayersWithZScores.map(
+      (p) => ({
+        ...p,
+        totalZ: calcTotalZScore(p),
+      }),
+    )
+    const recalculatedRankedPlayers = recalculatedFinalZScores
+      .sort((a, b) => (b.totalZ ?? 0) - (a.totalZ ?? 0))
       .map((p, i) => ({ ...p, rank: i + 1 }))
 
-    return rankedPlayers
+    return recalculatedRankedPlayers
   })
 
 // given a list of player objects, add in a specific percentage zstat (fgp or ftp)
@@ -201,6 +235,26 @@ const calcAllCountingZScores = (
   }
 
   return updatedPlayers as ProjectionPlayerWithZ[]
+}
+
+const calcTotalZScore = (player: ProjectionPlayerWithZ) => {
+  const zKeys: (keyof ProjectionPlayerWithZ)[] = [
+    'zpts',
+    'zreb',
+    'zast',
+    'zstl',
+    'zblk',
+    'ztpm',
+    'ztov',
+    'zfgp',
+    'zftp',
+  ]
+
+  return zKeys.reduce((sum, key) => {
+    const val = player[key as AllZStats] ?? 0
+    // Reverse turnovers
+    return key === 'ztov' ? sum - val : sum + val
+  }, 0)
 }
 
 export const getAllProjections = createServerFn({ method: 'GET' }).handler(
