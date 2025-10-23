@@ -75,7 +75,10 @@ export const getProjectionsBySource = createServerFn({ method: 'GET' })
 export const getProjectionsBySourceWithZScores = createServerFn({
   method: 'GET',
 })
-  .inputValidator((data: { source: string; topPlayerAmount?: number }) => data)
+  .inputValidator(
+    (data: { source: string; topPlayerAmount?: number; punted?: string[] }) =>
+      data,
+  )
   .handler(async ({ data }) => {
     const players = await db
       .select()
@@ -97,7 +100,7 @@ export const getProjectionsBySourceWithZScores = createServerFn({
 
     const withTotalZScores = playersWithCountingZScores.map((p) => ({
       ...p,
-      totalZ: calcTotalZScore(p),
+      totalZ: calcTotalZScore(p, data.punted),
     }))
 
     const rankedPlayers = withTotalZScores
@@ -125,7 +128,7 @@ export const getProjectionsBySourceWithZScores = createServerFn({
     const recalculatedFinalZScores = recalculatedPlayersWithZScores.map(
       (p) => ({
         ...p,
-        totalZ: calcTotalZScore(p),
+        totalZ: calcTotalZScore(p, data.punted),
       }),
     )
     const recalculatedRankedPlayers = recalculatedFinalZScores

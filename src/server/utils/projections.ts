@@ -69,7 +69,7 @@ export const calcPlayersCountingZScores = <K extends CountingStat>(
     const zStat = ((Number(player[countingStat]) || 0) - avg) / std
     return {
       ...player,
-      [`z${countingStat}`]: zStat,
+      [`z${countingStat}`]: zStat * (countingStat === 'tov' ? -1 : 1), // inverting turnovers
     }
   })
 
@@ -105,7 +105,10 @@ export const calcAllCountingZScores = (
   return updatedPlayers as ProjectionPlayerWithZ[]
 }
 
-export const calcTotalZScore = (player: ProjectionPlayerWithZ) => {
+export const calcTotalZScore = (
+  player: ProjectionPlayerWithZ,
+  punted: string[] = [],
+) => {
   const zKeys: (keyof ProjectionPlayerWithZ)[] = [
     'zpts',
     'zreb',
@@ -118,9 +121,11 @@ export const calcTotalZScore = (player: ProjectionPlayerWithZ) => {
     'zftp',
   ]
 
-  return zKeys.reduce((sum, key) => {
-    const val = player[key as AllZStats] ?? 0
-    // Reverse turnovers
-    return key === 'ztov' ? sum - val : sum + val
-  }, 0)
+  return zKeys
+    .filter((key) => !punted.includes(key.replace(/^z/, '')))
+    .reduce((sum, key) => {
+      const val = player[key as AllZStats] ?? 0
+      // Reverse turnovers
+      return sum + val
+    }, 0)
 }

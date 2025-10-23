@@ -19,7 +19,7 @@ export const Toggle: React.FC<{ enabled: boolean; onChange: () => void }> = ({
           } inline-block h-4 w-4 transform rounded-full bg-white transition`}
         />
       </Switch>
-      <span className="text-sm text-gray-300">Show zScores</span>
+      {/* <span className="text-sm text-gray-300">Show zScores</span> */}
     </div>
   )
 }
