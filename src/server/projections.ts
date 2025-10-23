@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { db } from '..'
 import { projections } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import type { ProjectionPlayer } from '@/db/schema'
 
 type CountingStat = 'pts' | 'reb' | 'ast' | 'stl' | 'blk' | 'tpm' | 'tov'
@@ -59,11 +59,16 @@ export const uploadProjections = createServerFn({ method: 'POST' })
 
 export const getProjectionSets = createServerFn({ method: 'GET' }).handler(
   async () => {
-    const rows = await db
-      .selectDistinctOn([projections.source])
-      .from(projections)
+    // const rows = await db
+    //   .selectDistinctOn([projections.source])
+    //   .from(projections)
 
-    return rows.map((r) => r.source)
+    // return rows.map((r) => r.source)
+    const all = await db
+      .select({ source: projections.source })
+      .from(projections)
+    const unique = [...new Set(all.map((r) => r.source))]
+    return unique.map((source) => ({ source }))
   },
 )
 

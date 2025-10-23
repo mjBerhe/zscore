@@ -125,11 +125,11 @@ function App() {
           >
             {projectionSets?.map((set) => (
               <ListboxOption
-                key={set}
-                value={set}
+                key={set.source}
+                value={set.source}
                 className="group flex cursor-default items-center gap-2 rounded-lg px-3 py-1.5 select-none data-focus:bg-zinc-700"
               >
-                <div className="text-sm text-white">{set}</div>
+                <div className="text-sm text-white">{set.source}</div>
               </ListboxOption>
             ))}
           </ListboxOptions>
