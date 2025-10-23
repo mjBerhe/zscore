@@ -25,7 +25,7 @@ const REGULAR_STATS = [
   'ast',
   'stl',
   'blk',
-  'to',
+  'tov',
   'fgp',
   'ftp',
 ]
@@ -37,7 +37,7 @@ const ZSCORE_STATS = [
   'zast',
   'zstl',
   'zblk',
-  'zto',
+  'ztov',
   'zfgp',
   'zftp',
 ]

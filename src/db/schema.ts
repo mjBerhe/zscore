@@ -21,11 +21,16 @@ export const projections = pgTable('projections', {
   ast: real('ast'),
   stl: real('stl'),
   blk: real('blk'),
-  to: real('to'),
+  tov: real('tov'),
   fgp: real('fgp'),
   fga: real('fga'),
   ftp: real('ftp'),
   fta: real('fta'),
 })
 
-export type ProjectionPlayer = InferSelectModel<typeof projections>
+export type ProjectionPlayer = InferSelectModel<typeof projections> & {
+  fgi?: number
+  fti?: number
+  zfgp?: number
+  zftp?: number
+}

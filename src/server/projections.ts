@@ -4,9 +4,12 @@ import { projections } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import type { ProjectionPlayer } from '@/db/schema'
 
-type CountingStat = 'pts' | 'reb' | 'ast' | 'stl' | 'blk' | 'tpm' | 'to'
+type CountingStat = 'pts' | 'reb' | 'ast' | 'stl' | 'blk' | 'tpm' | 'tov'
+type PercentageStat = 'fgp' | 'ftp'
+
+type AllZStats = CountingStat | PercentageStat
 type ZStatFields = {
-  [K in CountingStat as `z${K}`]: number
+  [K in AllZStats as `z${K}`]?: number
 }
 type ProjectionPlayerWithZ = ProjectionPlayer & ZStatFields
 
@@ -87,18 +90,67 @@ export const getProjectionsBySourceWithZScores = createServerFn({
     // lets have some consts
     // FIRST lets use all 480 players
 
-    const playersWithCountingZScores = calcAllCountingZScores(players)
-    console.log(playersWithCountingZScores)
+    let playersWithCountingZScores = calcAllCountingZScores(players)
+    playersWithCountingZScores = calcPlayersPercentageZScores(
+      playersWithCountingZScores,
+      'fgp',
+    )
+    playersWithCountingZScores = calcPlayersPercentageZScores(
+      playersWithCountingZScores,
+      'ftp',
+    )
 
     const rankedPlayers = playersWithCountingZScores
-      .sort((a, b) => b.zpts - a.zpts)
+      .sort((a, b) => b?.zpts || 0 - (a?.zpts || 0))
       .map((p, i) => ({ ...p, rank: i + 1 }))
-
-    // console.log(avgPts, stdPts)
 
     return rankedPlayers
   })
 
+// given a list of player objects, add in a specific percentage zstat (fgp or ftp)
+const calcPlayersPercentageZScores = (
+  players: ProjectionPlayer[],
+  percentageStat: 'fgp' | 'ftp',
+): ProjectionPlayerWithZ[] => {
+  const statValues = players.map((player) => player[percentageStat] || 0)
+  const avg =
+    statValues.reduce((sum, curr) => sum + curr, 0) / statValues.length
+
+  const playersWithImpactStat = players.map((player) => {
+    const playerStatAttempts =
+      percentageStat === 'fgp' ? player.fga || 0 : player.fta || 0
+    const impactValue =
+      ((player[percentageStat] || 0) - avg) * playerStatAttempts
+
+    return {
+      ...player,
+      [percentageStat === 'fgp' ? 'fgi' : 'fti']: impactValue,
+    }
+  })
+
+  // now calc the zscore for that new impact stat
+  const impactKey = percentageStat === 'fgp' ? 'fgi' : 'fti'
+  const impactValues = playersWithImpactStat.map((p) => p[impactKey] || 0)
+  const impactAvg =
+    impactValues.reduce((sum, curr) => sum + curr, 0) / impactValues.length
+
+  const variance =
+    impactValues.reduce((sum, v) => sum + (v - impactAvg) ** 2, 0) /
+    impactValues.length
+  const std = Math.sqrt(variance) || 1
+
+  const playersWithZScores = playersWithImpactStat.map((player) => {
+    const zStat = ((player[impactKey] || 0) - impactAvg) / std
+    return {
+      ...player,
+      [percentageStat === 'fgp' ? 'zfgp' : 'zftp']: zStat,
+    }
+  })
+
+  return playersWithZScores
+}
+
+// given a list of players objects with stats, add a specific zstat
 const calcPlayersCountingZScores = <K extends CountingStat>(
   players: ProjectionPlayer[],
   countingStat: K,
@@ -122,6 +174,7 @@ const calcPlayersCountingZScores = <K extends CountingStat>(
   return playersWithZScores
 }
 
+// update all counting zstats
 const calcAllCountingZScores = (
   players: ProjectionPlayer[],
 ): ProjectionPlayerWithZ[] => {
@@ -132,7 +185,7 @@ const calcAllCountingZScores = (
     'stl',
     'blk',
     'tpm',
-    'to',
+    'tov',
   ]
 
   // Start with the base players array
@@ -163,10 +216,3 @@ export const getAllProjections = createServerFn({ method: 'GET' }).handler(
 //     return result
 //   },
 // )
-
-const capitalizeFirstLetter = (str: string) => {
-  if (typeof str !== 'string' || str.length === 0) {
-    return str // Handle empty strings or non-string inputs
-  }
-  return str.charAt(0).toUpperCase() + str.slice(1)
-}
