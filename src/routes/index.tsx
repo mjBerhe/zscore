@@ -284,22 +284,34 @@ function App() {
                           {row.price.toFixed(2)}
                         </td>
                         {(zScoresToggle ? ZSCORE_STATS : REGULAR_STATS).map(
-                          (stat) => (
-                            <td
-                              key={stat}
-                              className="border border-gray-700 px-2 py-1 text-sm"
-                              style={{
-                                backgroundColor: zScoresToggle
-                                  ? getZScoreColor(
-                                      Number(row[stat as keyof typeof row]) ??
-                                        0,
-                                    )
-                                  : '',
-                              }}
-                            >
-                              {Number(row[stat as keyof typeof row]).toFixed(2)}
-                            </td>
-                          ),
+                          (stat) => {
+                            const isPunted = punted.includes(
+                              stat.replace(/^z/, ''),
+                            )
+                            return (
+                              <td
+                                key={stat}
+                                className={clsx(
+                                  'border border-gray-700 px-2 py-1 text-sm',
+                                  isPunted &&
+                                    'opacity-60 text-gray-400 saturate-0',
+                                )}
+                                style={{
+                                  backgroundColor: zScoresToggle
+                                    ? getZScoreColor(
+                                        Number(row[stat as keyof typeof row]) ??
+                                          0,
+                                        isPunted,
+                                      )
+                                    : '',
+                                }}
+                              >
+                                {Number(row[stat as keyof typeof row]).toFixed(
+                                  2,
+                                )}
+                              </td>
+                            )
+                          },
                         )}
                       </tr>
                     ))}
@@ -315,7 +327,11 @@ function App() {
 }
 
 // helper to get background color based on z-score
-const getZScoreColor = (z: number) => {
+const getZScoreColor = (z: number, isPunted: boolean) => {
+  if (isPunted) {
+    // make punted columns greyed-out
+    return 'rgba(120, 120, 120, 0.2)'
+  }
   const clamped = Math.max(-4, Math.min(4, z)) // cap between -3 and +3
   const intensity = Math.abs(clamped) / 3 // normalize 0–1
 
