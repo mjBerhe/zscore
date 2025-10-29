@@ -85,9 +85,6 @@ export const getProjectionsBySourceWithZScores = createServerFn({
       .from(projections)
       .where(eq(projections.source, data.source))
 
-    // lets have some consts
-    // FIRST lets use all 480 players
-
     let playersWithCountingZScores = calcAllCountingZScores(players)
     playersWithCountingZScores = calcPlayersPercentageZScores(
       playersWithCountingZScores,
