@@ -1,12 +1,39 @@
-import { pgTable, serial, text, integer, real } from 'drizzle-orm/pg-core'
+import {
+  pgTable,
+  serial,
+  text,
+  integer,
+  real,
+  numeric,
+  boolean,
+  index,
+} from 'drizzle-orm/pg-core'
 import { InferSelectModel } from 'drizzle-orm'
 
 export const players = pgTable('players', {
-  id: serial('id').primaryKey(),
-  name: text('name').notNull(),
-  team: text('team'),
+  id: integer('id').primaryKey(), // PERSON_ID
+  firstName: text('first_name').notNull(),
+  lastName: text('last_name').notNull(),
+  slug: text('slug'), // PLAYER_SLUG
+  teamId: integer('team_id'),
+  teamSlug: text('team_slug'),
+  teamCity: text('team_city'),
+  teamName: text('team_name'),
+  teamAbbreviation: text('team_abbreviation'),
+  jersey: text('jersey'),
   position: text('position'),
+  height: text('height'),
+  weight: numeric('weight'), // store as numeric for consistency
+  college: text('college'),
+  country: text('country'),
+  draftYear: integer('draft_year'),
+  draftRound: integer('draft_round'),
+  draftNumber: integer('draft_number'),
+  isActive: boolean('is_active').default(true),
+  createdAt: text('created_at'),
 })
+
+// export const playersIdx = index('players_is_active_idx').on(players.isActive)
 
 export const projections = pgTable('projections', {
   id: serial('id').primaryKey(),
@@ -34,3 +61,5 @@ export type ProjectionPlayer = InferSelectModel<typeof projections> & {
   zfgp?: number
   zftp?: number
 }
+
+export type Player = InferSelectModel<typeof players>
