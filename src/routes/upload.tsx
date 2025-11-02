@@ -1,26 +1,29 @@
 import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import { getAllPlayers } from '@/server/players'
 import { useServerFn } from '@tanstack/react-start'
 import { uploadProjections } from '@/server/projections'
+import { insertPlayersFromCSV } from '@/server/players'
 
 export const Route = createFileRoute('/upload')({
   component: Upload,
-  loader: () => getAllPlayers(),
 })
 
 function Upload() {
-  const getPlayers = useServerFn(getAllPlayers)
-
-  const { data } = useQuery({
-    queryKey: ['players'],
-    queryFn: () => getPlayers(),
-  })
-
   const [input, setInput] = useState<string>('')
 
   const upload = useServerFn(uploadProjections)
+  const insertPlayers = useServerFn(insertPlayersFromCSV)
+
+  const handleInsertPlayers = async () => {
+    try {
+      console.log('inserting players...')
+      const res = await insertPlayers()
+      console.log(res)
+    } catch (err) {
+      console.error('Insert failed:', err)
+    }
+  }
 
   const handleUpload = async () => {
     try {
@@ -33,7 +36,7 @@ function Upload() {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex gap-4">
       {/* {data?.map((player, i) => (
         <p key={i}>{player.name}</p>
       ))} */}
@@ -45,6 +48,12 @@ function Upload() {
         ></textarea>
 
         <button onClick={() => handleUpload()}>Submit</button>
+      </div>
+
+      <div>
+        <button onClick={() => handleInsertPlayers()} className="border">
+          Insert Players
+        </button>
       </div>
     </div>
   )

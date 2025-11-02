@@ -4,9 +4,7 @@ import {
   text,
   integer,
   real,
-  numeric,
   boolean,
-  index,
 } from 'drizzle-orm/pg-core'
 import { InferSelectModel } from 'drizzle-orm'
 
@@ -23,7 +21,7 @@ export const players = pgTable('players', {
   jersey: text('jersey'),
   position: text('position'),
   height: text('height'),
-  weight: numeric('weight'), // store as numeric for consistency
+  weight: integer('weight'),
   college: text('college'),
   country: text('country'),
   draftYear: integer('draft_year'),
@@ -32,8 +30,6 @@ export const players = pgTable('players', {
   isActive: boolean('is_active').default(true),
   createdAt: text('created_at'),
 })
-
-// export const playersIdx = index('players_is_active_idx').on(players.isActive)
 
 export const projections = pgTable('projections', {
   id: serial('id').primaryKey(),
