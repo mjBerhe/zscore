@@ -1,5 +1,9 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import {
+  getProjectionsBySourceWithZScores,
+  getProjectionSets,
+} from '@/server/projections'
 import { createFileRoute } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
 
@@ -13,15 +17,6 @@ import {
 import { ChevronDown } from 'lucide-react'
 import clsx from 'clsx'
 import { Toggle } from '@/components/Toggle'
-import {
-  getSeasonStatsByIdWithZScores,
-  getSeasonStatsSets,
-} from '@/server/seasonStats'
-import { getZScoreColor } from './projections'
-
-export const Route = createFileRoute('/')({
-  component: App,
-})
 
 const REGULAR_STATS = [
   'pts',
@@ -68,11 +63,17 @@ const TOP_N_OPTIONS = [
   { label: 'All Players', value: 999 },
 ]
 
-function App() {
-  const getSeasonSets = useServerFn(getSeasonStatsSets)
-  const getSeasonStatsById = useServerFn(getSeasonStatsByIdWithZScores)
+export const Route = createFileRoute('/projections')({
+  component: Projections,
+})
 
-  const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null)
+function Projections() {
+  const getAllProjectionSets = useServerFn(getProjectionSets)
+  const getProjectionSource = useServerFn(getProjectionsBySourceWithZScores)
+
+  const [selectedProjectionSet, setSelectedProjectionSet] = useState<
+    string | null
+  >(null)
 
   const [zScoresToggle, setZScoresToggle] = useState<boolean>(true)
 
@@ -81,45 +82,45 @@ function App() {
   const [punted, setPunted] = useState<string[]>([])
 
   const {
-    data: seasonSets,
+    data: projectionSets,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['season_sets'],
-    queryFn: () => getSeasonSets(),
+    queryKey: ['projectionSets'],
+    queryFn: () => getAllProjectionSets(),
   })
 
   const {
-    data: selectedSeasonStats,
-    isLoading: seasonStatsLoading,
-    error: seasonStatsError,
+    data: selectedProjections,
+    isLoading: projectionsLoading,
+    error: projectionsError,
   } = useQuery({
-    queryKey: ['season_stats', selectedSeasonId, selectedTopN, punted],
+    queryKey: ['projections', selectedProjectionSet, selectedTopN, punted],
     queryFn: () =>
-      selectedSeasonId
-        ? getSeasonStatsById({
+      selectedProjectionSet
+        ? getProjectionSource({
             data: {
-              seasonId: selectedSeasonId,
+              source: selectedProjectionSet,
               topPlayerAmount: selectedTopN.value,
               punted,
             },
           })
         : [],
-    enabled: !!selectedSeasonId, // only run when a source is selected
+    enabled: !!selectedProjectionSet, // only run when a source is selected
   })
 
   if (isLoading) return <p className="p-4 text-gray-400">Loading sets...</p>
   if (error) return <p className="p-4 text-red-400">Error loading sets.</p>
 
-  if (seasonStatsError)
+  if (projectionsError)
     return <p className="p-4 text-red-400">Error loading selected set.</p>
 
   return (
     <div className="min-h-screen bg-black text-white">
       <div className="max-w-7xl mx-auto mt-4 p-2 flex flex-col gap-y-4">
         <Listbox
-          value={selectedSeasonId}
-          onChange={(val) => setSelectedSeasonId(val)}
+          value={selectedProjectionSet}
+          onChange={(val) => setSelectedProjectionSet(val)}
         >
           <ListboxButton
             className={clsx(
@@ -127,7 +128,7 @@ function App() {
               'focus:not-data-focus:outline-none data-focus:outline-2 data-focus:-outline-offset-2 data-focus:outline-white/25',
             )}
           >
-            {selectedSeasonId ?? 'Select a Projection Set'}
+            {selectedProjectionSet ?? 'Select a Projection Set'}
             <ChevronDown className="absolute right-2 top-2.5 h-4 w-4 text-gray-400" />
           </ListboxButton>
           <ListboxOptions
@@ -138,13 +139,13 @@ function App() {
               'transition duration-100 ease-in data-leave:data-closed:opacity-0',
             )}
           >
-            {seasonSets?.map((set) => (
+            {projectionSets?.map((set) => (
               <ListboxOption
-                key={set.seasonId}
-                value={set.seasonId}
+                key={set.source}
+                value={set.source}
                 className="group flex cursor-default items-center gap-2 rounded-lg px-3 py-1.5 select-none data-focus:bg-zinc-700"
               >
-                <div className="text-sm text-white">{set.seasonId}</div>
+                <div className="text-sm text-white">{set.source}</div>
               </ListboxOption>
             ))}
           </ListboxOptions>
@@ -233,11 +234,11 @@ function App() {
         </div>
 
         <div className="space-y-1 mt-0">
-          {seasonStatsLoading ? (
+          {projectionsLoading ? (
             <p className="p-4 text-gray-400">Loading projections...</p>
           ) : (
-            selectedSeasonStats &&
-            selectedSeasonStats.length > 0 && (
+            selectedProjections &&
+            selectedProjections.length > 0 && (
               <div className="mt-0 overflow-x-auto">
                 <table className="table-fixed min-w-full border-collapse border border-gray-700">
                   <thead>
@@ -267,7 +268,7 @@ function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedSeasonStats.map((row, i) => (
+                    {selectedProjections.map((row, i) => (
                       <tr key={i} className="even:bg-zinc-800 odd:bg-zinc-900">
                         <td className="border border-gray-700 px-2 py-1 text-sm">
                           {row.playerName}
@@ -322,4 +323,23 @@ function App() {
       </div>
     </div>
   )
+}
+
+// helper to get background color based on z-score
+export const getZScoreColor = (z: number, isPunted: boolean) => {
+  if (isPunted) {
+    // make punted columns greyed-out
+    return 'rgba(120, 120, 120, 0.2)'
+  }
+  const clamped = Math.max(-4, Math.min(4, z)) // cap between -3 and +3
+  const intensity = Math.abs(clamped) / 3 // normalize 0–1
+
+  if (clamped > 0) {
+    // positive z — green shades
+    return `rgba(34, 197, 94, ${intensity * 1})` // Tailwind green-500 with alpha
+  } else if (clamped < 0) {
+    // negative z — red shades
+    return `rgba(239, 68, 68, ${intensity * 1})` // Tailwind red-500 with alpha
+  }
+  return 'transparent'
 }

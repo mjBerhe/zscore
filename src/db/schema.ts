@@ -7,6 +7,7 @@ import {
   boolean,
   timestamp,
   numeric,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core'
 import { InferSelectModel } from 'drizzle-orm'
 
@@ -35,7 +36,7 @@ export const players = pgTable('players', {
 
 // finish adjusting this schema to the actual stats
 
-export const gamelogs = pgTable('gamelogs', {
+export const gamelogs = pgTable('game_logs', {
   id: serial('id').primaryKey(),
   playerId: integer('player_id').notNull(), // links to players.id
   gameId: text('game_id').notNull(), // unique NBA game ID
@@ -82,6 +83,38 @@ export const projections = pgTable('projections', {
   ftp: real('ftp'),
   fta: real('fta'),
 })
+
+export const seasonStats = pgTable(
+  'season_stats',
+  {
+    id: serial('id').primaryKey(),
+    // playerName: text('player_name').notNull(),
+    playerId: integer('player_id').notNull(),
+    team: text('team'),
+    seasonId: text('season_id').notNull(),
+
+    gp: real('gp'),
+    pts: real('pts'),
+    tpm: real('threepm'),
+    reb: real('reb'),
+    ast: real('ast'),
+    stl: real('stl'),
+    blk: real('blk'),
+    tov: real('tov'),
+    fgp: real('fgp'),
+    fga: real('fga'),
+    ftp: real('ftp'),
+    fta: real('fta'),
+
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    playerSeasonUnique: uniqueIndex('player_season_unique').on(
+      table.playerId,
+      table.seasonId,
+    ),
+  }),
+)
 
 export type ProjectionPlayer = InferSelectModel<typeof projections> & {
   fgi?: number

@@ -3,35 +3,6 @@ import { db } from '..'
 import { players } from '@/db/schema'
 import playersData from '@/server/data/all_nba_players.json'
 
-type PlayerCSVRow = {
-  PERSON_ID: string
-  PLAYER_LAST_NAME: string
-  PLAYER_FIRST_NAME: string
-  PLAYER_SLUG: string
-  TEAM_ID: string
-  TEAM_SLUG: string
-  IS_DEFUNCT: string
-  TEAM_CITY: string
-  TEAM_NAME: string
-  TEAM_ABBREVIATION: string
-  JERSEY_NUMBER: string
-  POSITION: string
-  HEIGHT: string
-  WEIGHT: string
-  COLLEGE: string
-  COUNTRY: string
-  DRAFT_YEAR: string
-  DRAFT_ROUND: string
-  DRAFT_NUMBER: string
-  ROSTER_STATUS: string
-  FROM_YEAR: string
-  TO_YEAR: string
-  PTS: string
-  REB: string
-  AST: string
-  STATS_TIMEFRAME: string
-}
-
 export const insertPlayersFromJSON = createServerFn({ method: 'POST' }).handler(
   async () => {
     const data = playersData
