@@ -5,6 +5,8 @@ import {
   integer,
   real,
   boolean,
+  timestamp,
+  numeric,
 } from 'drizzle-orm/pg-core'
 import { InferSelectModel } from 'drizzle-orm'
 
@@ -29,6 +31,36 @@ export const players = pgTable('players', {
   draftNumber: integer('draft_number'),
   isActive: boolean('is_active').default(true),
   createdAt: text('created_at'),
+})
+
+// finish adjusting this schema to the actual stats
+
+export const gamelogs = pgTable('gamelogs', {
+  id: serial('id').primaryKey(),
+  playerId: integer('player_id').notNull(), // links to players.id
+  gameId: text('game_id').notNull(), // unique NBA game ID
+  seasonId: text('season_id').notNull(),
+  gameDate: timestamp('game_date').notNull(),
+  matchup: text('matchup').notNull(),
+  winloss: text('win_loss').notNull(),
+  minutes: integer('minutes'),
+  fgm: integer('fgm'),
+  fga: integer('fga'),
+  fg3m: integer('fg3m'),
+  fg3a: integer('fg3a'),
+  ftm: integer('ftm'),
+  fta: integer('fta'),
+  oreb: integer('oreb'),
+  dreb: integer('dreb'),
+  treb: integer('treb'),
+  ast: integer('ast'),
+  stl: integer('stl'),
+  blk: integer('blk'),
+  tov: integer('tov'),
+  pf: integer('pf'),
+  pts: integer('pts'),
+  plusMinus: integer('plus_minus'),
+  createdAt: timestamp('created_at').defaultNow(),
 })
 
 export const projections = pgTable('projections', {

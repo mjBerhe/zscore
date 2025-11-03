@@ -32,7 +32,7 @@ type PlayerCSVRow = {
   STATS_TIMEFRAME: string
 }
 
-export const insertPlayersFromCSV = createServerFn({ method: 'POST' }).handler(
+export const insertPlayersFromJSON = createServerFn({ method: 'POST' }).handler(
   async () => {
     const data = playersData
     const formatted = data

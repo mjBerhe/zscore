@@ -1,6 +1,5 @@
 from nba_api.stats.endpoints import playergamelog, PlayerIndex
 from nba_api.stats.static import players
-import csv
 import pandas as pd
 
 # Show all rows

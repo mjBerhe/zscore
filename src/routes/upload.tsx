@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
 import { useServerFn } from '@tanstack/react-start'
 import { uploadProjections } from '@/server/projections'
-import { insertPlayersFromCSV } from '@/server/players'
+import { insertPlayersFromJSON } from '@/server/insertActivePlayers'
+import { insertGameLogsfromJSON } from '@/server/insertGamelogs'
 
 export const Route = createFileRoute('/upload')({
   component: Upload,
@@ -13,7 +13,8 @@ function Upload() {
   const [input, setInput] = useState<string>('')
 
   const upload = useServerFn(uploadProjections)
-  const insertPlayers = useServerFn(insertPlayersFromCSV)
+  const insertPlayers = useServerFn(insertPlayersFromJSON)
+  const insertAllGameLogs = useServerFn(insertGameLogsfromJSON)
 
   const handleInsertPlayers = async () => {
     try {
@@ -29,6 +30,16 @@ function Upload() {
     try {
       console.log('uploading...')
       const result = await upload({ data: { csv: input } })
+      console.log('Upload result:', result)
+    } catch (err) {
+      console.error('Upload failed:', err)
+    }
+  }
+
+  const handleUploadAllGameLogs = async () => {
+    try {
+      console.log('uploading game logs...')
+      const result = await insertAllGameLogs()
       console.log('Upload result:', result)
     } catch (err) {
       console.error('Upload failed:', err)
@@ -53,6 +64,10 @@ function Upload() {
       <div>
         <button onClick={() => handleInsertPlayers()} className="border">
           Insert Players
+        </button>
+
+        <button onClick={() => handleUploadAllGameLogs()} className="border">
+          Insert Game Logs
         </button>
       </div>
     </div>
