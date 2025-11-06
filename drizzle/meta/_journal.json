@@ -8,6 +8,13 @@
       "when": 1760819262354,
       "tag": "0000_common_diamondback",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1762392184840,
+      "tag": "0001_chilly_ultimatum",
+      "breakpoints": true
     }
   ]
 }
