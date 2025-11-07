@@ -249,6 +249,9 @@ function App() {
                         Rank
                       </th>
                       <th className="border border-gray-700 py-1 text-sm w-16">
+                        Games
+                      </th>
+                      <th className="border border-gray-700 py-1 text-sm w-16">
                         Score
                       </th>
                       <th className="border border-gray-700 py-1 text-sm w-16">
@@ -274,6 +277,9 @@ function App() {
                         </td>
                         <td className="border border-gray-700 px-2 py-1 text-sm">
                           {row.rank}
+                        </td>
+                        <td className="border border-gray-700 px-2 py-1 text-sm">
+                          {row.gp}
                         </td>
                         <td className="border border-gray-700 px-2 py-1 text-sm">
                           {row.totalZ.toFixed(2)}

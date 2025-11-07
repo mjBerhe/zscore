@@ -15,6 +15,13 @@
       "when": 1762392184840,
       "tag": "0001_chilly_ultimatum",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1762490956726,
+      "tag": "0002_bouncy_klaw",
+      "breakpoints": true
     }
   ]
 }

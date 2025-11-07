@@ -2,6 +2,7 @@ import os
 import time
 import random
 import psycopg2
+import asyncio
 import pandas as pd
 from nba_api.stats.static import players
 from nba_api.stats.endpoints import playergamelog
@@ -49,6 +50,8 @@ def connect_db():
 
 
 conn, cur = connect_db()
+lock = asyncio.Lock()
+
 # ----------------------------
 # Get the latest game date per player
 # ----------------------------

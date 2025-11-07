@@ -104,7 +104,7 @@ export const seasonStats = pgTable(
 
     gp: real('gp'),
     pts: real('pts'),
-    tpm: real('threepm'),
+    tpm: real('tpm'),
     reb: real('reb'),
     ast: real('ast'),
     stl: real('stl'),

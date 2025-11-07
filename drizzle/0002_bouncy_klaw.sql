@@ -1,0 +1,1 @@
+ALTER TABLE "season_stats" RENAME COLUMN "threepm" TO "tpm";
