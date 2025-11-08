@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as UploadRouteImport } from './routes/upload'
 import { Route as ProjectionsRouteImport } from './routes/projections'
 import { Route as PlayersRouteImport } from './routes/players'
+import { Route as HomeRouteImport } from './routes/home'
 import { Route as IndexRouteImport } from './routes/index'
 
 const UploadRoute = UploadRouteImport.update({
@@ -29,6 +30,11 @@ const PlayersRoute = PlayersRouteImport.update({
   path: '/players',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HomeRoute = HomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -37,12 +43,14 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/home': typeof HomeRoute
   '/players': typeof PlayersRoute
   '/projections': typeof ProjectionsRoute
   '/upload': typeof UploadRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/home': typeof HomeRoute
   '/players': typeof PlayersRoute
   '/projections': typeof ProjectionsRoute
   '/upload': typeof UploadRoute
@@ -50,20 +58,22 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/home': typeof HomeRoute
   '/players': typeof PlayersRoute
   '/projections': typeof ProjectionsRoute
   '/upload': typeof UploadRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/players' | '/projections' | '/upload'
+  fullPaths: '/' | '/home' | '/players' | '/projections' | '/upload'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/players' | '/projections' | '/upload'
-  id: '__root__' | '/' | '/players' | '/projections' | '/upload'
+  to: '/' | '/home' | '/players' | '/projections' | '/upload'
+  id: '__root__' | '/' | '/home' | '/players' | '/projections' | '/upload'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  HomeRoute: typeof HomeRoute
   PlayersRoute: typeof PlayersRoute
   ProjectionsRoute: typeof ProjectionsRoute
   UploadRoute: typeof UploadRoute
@@ -92,6 +102,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlayersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/home': {
+      id: '/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof HomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -104,6 +121,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  HomeRoute: HomeRoute,
   PlayersRoute: PlayersRoute,
   ProjectionsRoute: ProjectionsRoute,
   UploadRoute: UploadRoute,
