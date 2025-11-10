@@ -1,5 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useUser, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react'
+import { useServerFn } from '@tanstack/react-start'
+import {
+  getFantraxLeagueInfo,
+  getFantraxRosters,
+} from '@/server/getFantraxRosters'
+import { useQuery } from '@tanstack/react-query'
 
 export const Route = createFileRoute('/home')({
   component: Home,
@@ -8,7 +14,22 @@ export const Route = createFileRoute('/home')({
 function Home() {
   const { user } = useUser()
 
-  console.log(user?.id)
+  const getLeagueRosters = useServerFn(getFantraxRosters)
+  const getLeagueInfo = useServerFn(getFantraxLeagueInfo)
+
+  // const { data, isLoading, error } = useQuery({
+  //   queryKey: ['league_rosters'],
+  //   queryFn: () => getLeagueRosters({ data: { leagueId: '0o5m6y2smg7382ww' } }),
+  // })
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['league_info'],
+    queryFn: () => getLeagueInfo({ data: { leagueId: '0o5m6y2smg7382ww' } }),
+  })
+
+  if (data) {
+    console.log(data.teamsInfo)
+  }
 
   return (
     <div>
