@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.49.0",
+    "@clerk/tanstack-react-start": "^0.27.0",
     "@cloudflare/vite-plugin": "^1.13.8",
     "@headlessui/react": "^2.2.9",
     "@neondatabase/serverless": "^1.0.2",
@@ -37,7 +38,8 @@
     "react-dom": "^19.0.0",
     "react-papaparse": "^4.4.0",
     "tailwindcss": "^4.0.6",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-tsconfig-paths": "^5.1.4",
+    "srvx": "0.8.15"
   },
   "devDependencies": {
     "@tanstack/eslint-config": "^0.3.0",
@@ -56,5 +58,10 @@
     "vitest": "^3.0.5",
     "web-vitals": "^5.1.0",
     "wrangler": "^4.40.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "srvx": "0.8.15"
+    }
   }
 }

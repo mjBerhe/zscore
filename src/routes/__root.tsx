@@ -3,10 +3,8 @@ import {
   Scripts,
   createRootRouteWithContext,
 } from '@tanstack/react-router'
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-import { TanStackDevtools } from '@tanstack/react-devtools'
-
-import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
+import { auth } from '@clerk/tanstack-react-start/server'
+import { createServerFn } from '@tanstack/react-start'
 
 import ClerkProvider from '../integrations/clerk/provider'
 
@@ -45,12 +43,12 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <ClerkProvider>
+    <ClerkProvider>
+      <html lang="en">
+        <head>
+          <HeadContent />
+        </head>
+        <body>
           {children}
           {/* <TanStackDevtools
             config={{
@@ -64,9 +62,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               TanStackQueryDevtools,
             ]}
           /> */}
-        </ClerkProvider>
-        <Scripts />
-      </body>
-    </html>
+          <Scripts />
+        </body>
+      </html>
+    </ClerkProvider>
   )
 }
