@@ -97,7 +97,6 @@ export const seasonStats = pgTable(
   'season_stats',
   {
     id: serial('id').primaryKey(),
-    // playerName: text('player_name').notNull(),
     playerId: integer('player_id').notNull(),
     team: text('team'),
     seasonId: text('season_id').notNull(),
@@ -125,6 +124,20 @@ export const seasonStats = pgTable(
   }),
 )
 
+export const fantasyProfiles = pgTable('fantasy_profiles', {
+  id: serial('id').primaryKey(),
+
+  userId: text('user_id').notNull(), // Clerk user ID
+  platform: text('platform').notNull(), // "fantrax", "espn", etc.
+  leagueId: text('league_id').notNull(), // Fantrax league ID
+  teamId: text('team_id').notNull(), // Fantrax team ID
+
+  teamName: text('team_name'),
+  ownerName: text('owner_name'),
+
+  createdAt: timestamp('created_at').defaultNow(),
+})
+
 export type ProjectionPlayer = InferSelectModel<typeof projections> & {
   fgi?: number
   fti?: number
@@ -133,3 +146,4 @@ export type ProjectionPlayer = InferSelectModel<typeof projections> & {
 }
 
 export type Player = InferSelectModel<typeof players>
+export type FantasyProfile = InferSelectModel<typeof fantasyProfiles>
