@@ -31,7 +31,7 @@ export const players = pgTable('players', {
   draftRound: integer('draft_round'),
   draftNumber: integer('draft_number'),
   isActive: boolean('is_active').default(true),
-  createdAt: text('created_at'),
+  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
 })
 
 // finish adjusting this schema to the actual stats
@@ -63,7 +63,9 @@ export const gamelogs = pgTable(
     pf: integer('pf'),
     pts: integer('pts'),
     plusMinus: integer('plus_minus'),
-    createdAt: timestamp('created_at').defaultNow(),
+    createdAt: timestamp('created_at', { mode: 'string' })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
     uniquePlayerGame: uniqueIndex('player_game_unique').on(
@@ -135,7 +137,7 @@ export const fantasyProfiles = pgTable('fantasy_profiles', {
   teamName: text('team_name'),
   ownerName: text('owner_name'),
 
-  createdAt: timestamp('created_at').defaultNow(),
+  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
 })
 
 export type ProjectionPlayer = InferSelectModel<typeof projections> & {
